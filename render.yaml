@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: ai-document-intelligence-backend
+    runtime: node
+    rootDir: backend
+    plan: standard
+    buildCommand: npm install && npm run build
+    startCommand: npm run start:prod
+    healthCheckPath: /health/readiness
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: STORAGE_DIR
+        value: ./uploads
+      - key: MAX_UPLOAD_BYTES
+        value: 15728640
+      - key: MAX_PAGE_COUNT
+        value: 20
+      - key: OCR_ENGINE_ENABLED
+        value: false
+      - key: FEATURE_NL_SQL_ENABLED
+        value: true
+      - key: SQL_STATEMENT_TIMEOUT_MS
+        value: 2000
+      - key: SQL_ACCESS_SECRET
+        generateValue: true
+      - key: AI_PLATFORM_API_KEY
+        sync: false
+      - key: NOTIFICATION_SERVICE_URL
+        sync: false
+      - key: NOTIFICATION_SERVICE_API_KEY
+        sync: false
