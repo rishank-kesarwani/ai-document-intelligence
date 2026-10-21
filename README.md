@@ -191,12 +191,13 @@ The platform implements an environment-driven access model modeled after modern 
 ### Render (Backend)
 - **Root Directory**: `backend/`
 - **Environment**: `Node`
-- **Build Command**: `npm install && npm run build`
+- **Build Command**: `npm install --include=dev && npm run build`
 - **Start Command**: `npm run start:prod` (`node dist/main`)
 - **Health Check Path**: `/health/readiness`
 - **Render Deployment Filtering**: Render honors `rootDir: backend`. Changes confined to `frontend/` do not trigger backend rebuilds.
 - **Environment Variables**:
   - `NODE_ENV`: `production`
+  - `NODE_VERSION`: `20.18.0`
   - `PORT`: `10000` (Render binds to `0.0.0.0:$PORT`)
   - `PUBLIC_ACCESS_ENABLED`: `true` (demo enabled) or `false` (strict tenant auth required)
   - `STORAGE_DIR`: `./uploads`
