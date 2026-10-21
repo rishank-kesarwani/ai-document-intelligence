@@ -3,7 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import { SystemCapabilities } from '../lib/types';
-import { FileText, Shield, Sparkles, Lock } from 'lucide-react';
+import { Shield, Sparkles, Lock } from 'lucide-react';
+import { Logo } from './Logo';
 
 interface HeaderProps {
   tenantId: string;
@@ -45,9 +46,7 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="app-header">
       <div className="brand-section">
-        <div className="brand-icon">
-          <FileText className="w-5 h-5 text-white" />
-        </div>
+        <Logo size={36} />
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <h1 className="brand-title">Document Intelligence</h1>

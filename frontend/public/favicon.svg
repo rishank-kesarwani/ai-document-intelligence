@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="docGrad" x1="4" y1="4" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6366F1"/>
+      <stop offset="0.5" stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#EC4899"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Squircle container background -->
+  <rect x="2" y="2" width="44" height="44" rx="12" fill="url(#docGrad)"/>
+  <rect x="2" y="2" width="44" height="44" rx="12" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
+
+  <!-- Back document shadow layer -->
+  <path d="M16 10H30L35 15V32H16V10Z" fill="rgba(0,0,0,0.25)"/>
+
+  <!-- Main Document Page with folded corner -->
+  <path d="M13 13C13 11.8954 13.8954 11 15 11H26.5L33 17.5V34C33 35.1046 32.1046 36 31 36H15C13.8954 36 13 35.1046 13 34V13Z" fill="#0B0F19" stroke="rgba(255,255,255,0.5)" stroke-width="1.4"/>
+  
+  <!-- Fold corner -->
+  <path d="M26.5 11V16C26.5 16.8284 27.1716 17.5 28 17.5H33" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.4"/>
+
+  <!-- Document scan/content lines -->
+  <line x1="17" y1="21" x2="24" y2="21" stroke="#38BDF8" stroke-width="1.6" stroke-linecap="round"/>
+  <line x1="17" y1="25.5" x2="29" y2="25.5" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" stroke-opacity="0.85"/>
+  <line x1="17" y1="30" x2="23" y2="30" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" stroke-opacity="0.55"/>
+
+  <!-- AI Intelligence Sparkle in bottom-right corner -->
+  <circle cx="32" cy="32" r="5.5" fill="#4F46E5" stroke="#818CF8" stroke-width="1"/>
+  <path d="M32 28L32.8 30.8L35.6 31.6L32.8 32.4L32 35.2L31.2 32.4L28.4 31.6L31.2 30.8L32 28Z" fill="#FFFFFF"/>
+</svg>
