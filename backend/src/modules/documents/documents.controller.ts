@@ -16,6 +16,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response, Request } from 'express';
+import 'multer';
 import { DocumentsService } from './documents.service';
 import { TenantGuard } from '../../common/guards/tenant.guard';
 import { PublicAccessGuard } from '../../common/guards/public-access.guard';

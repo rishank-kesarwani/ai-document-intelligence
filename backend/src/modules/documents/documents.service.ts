@@ -13,6 +13,7 @@ import { DocumentEntity } from './entities/document.entity';
 import { MagicBytesUtil } from './utils/magic-bytes.util';
 import { SyntheticDocumentsUtil } from './utils/synthetic-documents.util';
 import { DocumentModality, TenantContext } from '../../common/types';
+import 'multer';
 
 @Injectable()
 export class DocumentsService {
