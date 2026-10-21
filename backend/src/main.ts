@@ -24,8 +24,13 @@ async function bootstrap() {
   );
 
   // CORS configuration
+  const frontendUrl = process.env.FRONTEND_URL;
+  const corsOrigin = frontendUrl
+    ? frontendUrl.split(',').map((origin) => origin.trim()).filter(Boolean)
+    : '*';
+
   app.enableCors({
-    origin: '*',
+    origin: corsOrigin,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     allowedHeaders: '*',
     exposedHeaders: ['x-correlation-id', 'Content-Disposition'],
