@@ -9,7 +9,7 @@
     "start": "next start -p 3000",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
-    "test": "echo \"Frontend tests passed (static verification)\" && exit 0"
+    "test": "node --test --experimental-strip-types test/api-client.test.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.447.0",

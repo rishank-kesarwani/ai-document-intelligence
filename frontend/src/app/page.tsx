@@ -7,6 +7,7 @@ import {
   ExtractionSchema,
   ExtractionJob,
   ExtractedField,
+  SystemCapabilities,
 } from '../lib/types';
 import { Header } from '../components/Header';
 import { DocumentUpload } from '../components/DocumentUpload';
@@ -25,11 +26,14 @@ import {
   FileCheck,
   AlertCircle,
   Loader2,
+  Lock,
 } from 'lucide-react';
 
 export default function Home() {
-  const [tenantId, setTenantId] = useState('tenant-demo-default');
-  const [isDemoMode, setIsDemoMode] = useState(true);
+  const isPublicAccessEnabled = api.isPublicAccessEnabled();
+  const [tenantId, setTenantId] = useState(api.getDefaultTenantId());
+  const [isDemoMode, setIsDemoMode] = useState(isPublicAccessEnabled);
+  const [capabilities, setCapabilities] = useState<SystemCapabilities | null>(null);
   const [activeTab, setActiveTab] = useState<'documents' | 'extraction' | 'sql'>('documents');
 
   const [documents, setDocuments] = useState<DocumentEntity[]>([]);
@@ -45,6 +49,15 @@ export default function Home() {
   const [editingField, setEditingField] = useState<ExtractedField | null>(null);
   const [showAuditTrail, setShowAuditTrail] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+
+  useEffect(() => {
+    api.getCapabilities()
+      .then((caps) => setCapabilities(caps))
+      .catch((err) => console.warn('Could not load system capabilities:', err));
+  }, []);
+
+  const backendPublicAccessEnabled = capabilities?.publicAccess?.enabled;
+  const isDemoPermitted = isPublicAccessEnabled && backendPublicAccessEnabled !== false;
 
   const loadInitialData = useCallback(async () => {
     try {
@@ -159,9 +172,49 @@ export default function Home() {
         onTenantChange={handleTenantChange}
         isDemoMode={isDemoMode}
         onDemoModeToggle={setIsDemoMode}
+        isPublicAccessEnabled={isPublicAccessEnabled}
+        backendPublicAccessEnabled={backendPublicAccessEnabled}
       />
 
       <main style={{ maxWidth: '1440px', width: '100%', margin: '0 auto', padding: '1.5rem', flex: 1 }}>
+        {/* Public Access Policy Banner when Demo Access is Disabled */}
+        {!isDemoPermitted && (
+          <div
+            className="alert-banner"
+            style={{
+              background: 'rgba(239, 68, 68, 0.1)',
+              borderColor: 'rgba(239, 68, 68, 0.3)',
+              color: '#fca5a5',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '1.25rem',
+              flexWrap: 'wrap',
+              gap: '0.75rem',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <Lock className="w-4 h-4 flex-shrink-0 text-rose-400" />
+              <span>
+                <strong>Public Demo Access Disabled:</strong>{' '}
+                {backendPublicAccessEnabled === false
+                  ? 'Server environment policy (PUBLIC_ACCESS_ENABLED=false) enforces strict tenant authorization. Synthetic demo seeding and default demo tenant access are blocked.'
+                  : 'Frontend public access is disabled by configuration (NEXT_PUBLIC_ACCESS_ENABLED=false).'}
+                {' '}Please use an authorized tenant identifier.
+              </span>
+            </div>
+            {tenantId === 'tenant-demo-default' && (
+              <button
+                className="btn btn-sm btn-primary"
+                onClick={() => handleTenantChange('tenant-enterprise-prod')}
+                style={{ flexShrink: 0, padding: '4px 10px', fontSize: '0.75rem' }}
+              >
+                Switch to Enterprise Tenant
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Global Error Banner */}
         {errorBanner && (
           <div className="alert-banner alert-error">
@@ -202,7 +255,11 @@ export default function Home() {
         {/* Tab 1: Documents Ingestion */}
         {activeTab === 'documents' && (
           <div>
-            <DocumentUpload onDocumentUploaded={loadInitialData} />
+            <DocumentUpload
+              onDocumentUploaded={loadInitialData}
+              isPublicAccessEnabled={isPublicAccessEnabled}
+              backendPublicAccessEnabled={backendPublicAccessEnabled}
+            />
             <DocumentList
               documents={documents}
               schemas={schemas}

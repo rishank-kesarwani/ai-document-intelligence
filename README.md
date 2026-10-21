@@ -111,7 +111,70 @@ The SQL module is constrained and independently authorized:
 
 ---
 
-## 7. Deployment Configuration & Change Filtering
+## 7. Environment-Controlled Public Access Architecture
+
+The platform implements an environment-driven access model modeled after modern multi-tenant enterprise practices:
+
+```
+┌────────────────────────────────────────────────────────┐
+│                   Next.js Frontend                     │
+│  NEXT_PUBLIC_ACCESS_ENABLED (Presentation Flag Only)   │
+│  - true:  Shows Demo Mode toggle & synthetic seeder   │
+│  - false: Locks Demo Mode & shows policy alert banner  │
+└───────────────────────────┬────────────────────────────┘
+                            │ (Client Fetch with single /api/v1)
+                            ▼
+┌────────────────────────────────────────────────────────┐
+│                    NestJS Backend                      │
+│     PUBLIC_ACCESS_ENABLED (Authoritative Policy)       │
+│  - true:  Allows unauthenticated demo fallback        │
+│  - false: Requires explicit x-tenant-id (401), blocks │
+│           tenant-demo-default (403), denies demo seed  │
+└────────────────────────────────────────────────────────┘
+```
+
+### Access Control Matrix
+
+| Client Flag (`NEXT_PUBLIC_ACCESS_ENABLED`) | Server Flag (`PUBLIC_ACCESS_ENABLED`) | Behavior |
+|---|---|---|
+| `true` | `true` | **Full Public Demo**: UI displays demo controls; backend permits synthetic demo seeding and falls back to `tenant-demo-default` for anonymous requests. |
+| `true` | `false` | **Server-Enforced Lockdown**: UI attempts demo actions, but backend rejects demo seeding (`403 Forbidden`) and unauthenticated access (`401 Unauthorized`). Server authority takes precedence over client JavaScript. |
+| `false` | `true` | **Enterprise Presentation**: UI locks demo mode and hides synthetic seeding shortcuts, directing users to specify an explicit tenant identifier. |
+| `false` | `false` | **Full Strict Enterprise Production**: Client and server in unison; strict authenticated tenant isolation enforced everywhere. |
+
+### Public vs Protected Route Matrix
+
+| Route | Method | Public Demo (`PUBLIC_ACCESS_ENABLED=true`) | Protected (`PUBLIC_ACCESS_ENABLED=false`) | Guard Policy |
+|---|---|---|---|---|
+| `/` | `GET` | Public (Root Service Metadata) | Public | None |
+| `/health/liveness` | `GET` | Public (Uptime Probe) | Public | None |
+| `/health/readiness` | `GET` | Public (Dependency Health) | Public | None |
+| `/api/v1/capabilities` | `GET` | Public (Reports `publicAccess.enabled: true`) | Public (Reports `publicAccess.enabled: false`) | None |
+| `/api/v1/documents/demo/seed` | `POST` | Permitted (`tenant-demo-default`) | **403 Forbidden** | `PublicAccessGuard`, `TenantGuard` |
+| `/api/v1/documents` | `GET` | Permitted (Defaults to `tenant-demo-default`) | **Requires `x-tenant-id`** (401 if missing, 403 on demo tenant) | `TenantGuard` |
+| `/api/v1/documents/:id` | `GET` | Permitted | **Requires `x-tenant-id`** | `TenantGuard` |
+| `/api/v1/documents/:id/content`| `GET` | Permitted (Tenant scoped) | **Requires `x-tenant-id`** | `TenantGuard` |
+| `/api/v1/documents/upload` | `POST` | Permitted (Validated upload) | **Requires `x-tenant-id`** | `TenantGuard` |
+| `/api/v1/documents/:id` | `DELETE` | Permitted (Tenant scoped) | **Requires `x-tenant-id`** | `TenantGuard` |
+| `/api/v1/schemas` | `GET` | Permitted (Public catalog) | **Requires `x-tenant-id`** | `TenantGuard` |
+| `/api/v1/schemas/:id` | `GET` | Permitted | **Requires `x-tenant-id`** | `TenantGuard` |
+| `/api/v1/schemas` | `POST` | Permitted (Validated schema) | **Requires `x-tenant-id`** | `TenantGuard` |
+| `/api/v1/jobs/extract` | `POST` | Permitted (Tenant isolated) | **Requires `x-tenant-id`** | `TenantGuard` |
+| `/api/v1/jobs` | `GET` | Permitted (Tenant isolated) | **Requires `x-tenant-id`** | `TenantGuard` |
+| `/api/v1/jobs/:id` | `GET` | Permitted | **Requires `x-tenant-id`** | `TenantGuard` |
+| `/api/v1/jobs/:id/retry` | `POST` | Permitted | **Requires `x-tenant-id`** | `TenantGuard` |
+| `/api/v1/review/jobs/:id/fields/:key` | `PATCH` | Permitted (Audit logged) | **Requires `x-tenant-id`** | `TenantGuard` |
+| `/api/v1/review/jobs/:id/approve` | `POST` | Permitted (Audit logged) | **Requires `x-tenant-id`** | `TenantGuard` |
+| `/api/v1/review/jobs/:id/reject` | `POST` | Permitted (Audit logged) | **Requires `x-tenant-id`** | `TenantGuard` |
+| `/api/v1/review/jobs/:id/audit-trail` | `GET` | Permitted | **Requires `x-tenant-id`** | `TenantGuard` |
+| `/api/v1/export/jobs/:id` | `GET` | Permitted (Traceable export) | **Requires `x-tenant-id`** | `TenantGuard` |
+| `/api/v1/sql/schema` | `GET` | Permitted (Allowlisted catalog) | **Requires `x-tenant-id`** | `TenantGuard` |
+| `/api/v1/sql/explain` | `POST` | Permitted (AST verified) | **Requires `x-tenant-id`** | `TenantGuard` |
+| `/api/v1/sql/query` | `POST` | **Requires `x-sql-authorized: true`** | **Requires `x-tenant-id` + `x-sql-authorized: true`** | `TenantGuard`, `SqlAuthGuard` |
+
+---
+
+## 8. Deployment Configuration & Change Filtering
 
 ### Vercel (Frontend)
 - **Root Directory**: `frontend/`
@@ -119,11 +182,11 @@ The SQL module is constrained and independently authorized:
 - **Build Command**: `npm run build`
 - **Install Command**: `npm install`
 - **Ignored Build Step**: Configure `scripts/vercel-ignore-build-step.sh` in Vercel project settings.
-  - Returns exit code `1` (build) if `frontend/`, `scripts/`, or root configuration files changed.
-  - Returns exit code `0` (skip) if only `backend/` files changed.
 - **Environment Variables**:
-  - `NEXT_PUBLIC_API_URL`: Backend production URL (e.g. `https://your-backend.onrender.com/api/v1`).
-  - *No server secrets or database credentials are exposed to the frontend.*
+  - `NEXT_PUBLIC_API_URL`: Backend production API base URL including `/api/v1` exactly once (e.g. `https://ai-document-intelligence-api.onrender.com/api/v1`).
+  - `NEXT_PUBLIC_ACCESS_ENABLED`: `true` or `false` (controls presentation of demo controls).
+  - `NEXT_PUBLIC_DEFAULT_TENANT_ID`: `tenant-demo-default` (default tenant for demo mode).
+  - *All NEXT_PUBLIC_* variables are embedded at build time. Changing them on Vercel requires a rebuild/redeployment.*
 
 ### Render (Backend)
 - **Root Directory**: `backend/`
@@ -135,7 +198,8 @@ The SQL module is constrained and independently authorized:
 - **Environment Variables**:
   - `NODE_ENV`: `production`
   - `PORT`: `10000` (Render binds to `0.0.0.0:$PORT`)
-  - `STORAGE_DIR`: `./uploads` (or mounted persistent disk)
+  - `PUBLIC_ACCESS_ENABLED`: `true` (demo enabled) or `false` (strict tenant auth required)
+  - `STORAGE_DIR`: `./uploads`
   - `MAX_UPLOAD_BYTES`: `15728640`
   - `MAX_PAGE_COUNT`: `20`
   - `FEATURE_NL_SQL_ENABLED`: `true`
@@ -144,49 +208,26 @@ The SQL module is constrained and independently authorized:
 
 ---
 
-## 8. Verification Results
+## 9. Verification & Test Results
 
 ### Backend
-- **Unit Tests**: 5 test suites, 23 tests passed (`npm test` in `backend/`).
-- **E2E Integration Tests**: 14 tests passed (`npm run test:e2e` in `backend/`).
-- **Type Checking & Production Build**: NestJS compilation succeeded (`npm run build` in `backend/`).
-- **Production Startup Smoke Test**: Verified `node dist/main` with `PORT=4010` answering `/`, `/health/liveness`, `/health/readiness`, and `/api/v1/capabilities`.
+- **Unit Tests**: 7 test suites, 35 tests passed (`npm test` in `backend/`).
+  - Includes `PublicAccessGuard` (enabled/disabled policies, error formatting).
+  - Includes `TenantGuard` (public demo fallback, strict tenant requirement, demo tenant blocking, format injection protection).
+- **E2E Integration Tests**: 2 test suites, 21 tests passed (`npm run test:e2e` in `backend/`).
+  - `test/app.e2e-spec.ts`: Full document lifecycle, extraction, review, export, and SQL safeguards.
+  - `test/public-access-disabled.e2e-spec.ts`: Direct API requests testing `PUBLIC_ACCESS_ENABLED=false` enforcement, 401 unauthenticated rejection, 403 demo tenant blocking, and 403 demo seeding denial.
+- **Type Checking & Production Build**: NestJS compilation succeeded without errors (`npm run build` in `backend/`).
 
 ### Frontend
+- **Unit & Normalization Tests**: 12 tests passed (`npm test` in `frontend/`).
+  - Base URL configuration, trailing slash stripping, single `/api/v1` guarantee.
+  - Prefix deduplication (`/api/v1/documents` -> `/api/v1/documents`).
+  - Presentation feature flag parsing (`NEXT_PUBLIC_ACCESS_ENABLED=true|false`).
+  - Document content streaming URL construction (`/documents/:id/content`).
+  - `ApiError` class and correlation ID propagation.
 - **Type Checking**: Clean TypeScript validation with no emit errors (`npm run type-check` in `frontend/`).
 - **Production Build**: Next.js 14 optimized build generated successfully with static page generation (`npm run build` in `frontend/`).
-
----
-
-## 9. API Reference Contract
-
-| Method | Route | Description | Auth / Guards |
-|---|---|---|---|
-| `GET` | `/` | Root service metadata and endpoint directory | None |
-| `GET` | `/health/liveness` | Service liveness probe (200 OK) | None |
-| `GET` | `/health/readiness` | Storage write & dependency readiness probe | None |
-| `GET` | `/api/v1/capabilities` | Multimodal engine, SQL, and notification capabilities | None |
-| `POST` | `/api/v1/documents/upload` | Multipart file upload with magic-byte validation | `TenantGuard` |
-| `POST` | `/api/v1/documents/demo/seed` | Seed synthetic Invoice, Contract, and W-9 demo docs | `TenantGuard` |
-| `GET` | `/api/v1/documents` | List ingested documents for tenant | `TenantGuard` |
-| `GET` | `/api/v1/documents/:id` | Get document metadata | `TenantGuard` |
-| `GET` | `/api/v1/documents/:id/content` | Stream authorized binary content | `TenantGuard` |
-| `DELETE` | `/api/v1/documents/:id` | Soft or hard delete document & storage | `TenantGuard` |
-| `GET` | `/api/v1/schemas` | List extraction schemas | `TenantGuard` |
-| `GET` | `/api/v1/schemas/:id` | Get extraction schema definition | `TenantGuard` |
-| `POST` | `/api/v1/schemas` | Register custom schema with cross-field rules | `TenantGuard` |
-| `POST` | `/api/v1/jobs/extract` | Trigger schema extraction job | `TenantGuard` |
-| `GET` | `/api/v1/jobs` | List extraction jobs for tenant | `TenantGuard` |
-| `GET` | `/api/v1/jobs/:id` | Get job status, confidence, and linked evidence | `TenantGuard` |
-| `POST` | `/api/v1/jobs/:id/retry` | Safe idempotent job retry | `TenantGuard` |
-| `PATCH` | `/api/v1/review/jobs/:id/fields/:key` | Human field correction with audit logging | `TenantGuard` |
-| `POST` | `/api/v1/review/jobs/:id/approve` | Approve extraction data | `TenantGuard` |
-| `POST` | `/api/v1/review/jobs/:id/reject` | Reject extraction data | `TenantGuard` |
-| `GET` | `/api/v1/review/jobs/:id/audit-trail` | Retrieve field correction audit history | `TenantGuard` |
-| `GET` | `/api/v1/export/jobs/:id` | Export traceable JSON or CSV (`?format=csv`) | `TenantGuard` |
-| `GET` | `/api/v1/sql/schema` | Allowlisted SQL schema catalog | `TenantGuard` |
-| `POST` | `/api/v1/sql/explain` | Dry-run AST validation and human explanation | `TenantGuard` |
-| `POST` | `/api/v1/sql/query` | Execute validated read-only SQL query | `TenantGuard`, `SqlAuthGuard` |
 
 ---
 
@@ -203,3 +244,4 @@ cd frontend
 npm install
 npm run dev         # Runs on http://localhost:3000
 ```
+

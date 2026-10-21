@@ -72,8 +72,17 @@ export class HealthController {
     const aiPlatformKey = this.configService.get<string>('AI_PLATFORM_API_KEY');
     const sqlEnabled = this.configService.get<string>('FEATURE_NL_SQL_ENABLED', 'true') === 'true';
     const notificationUrl = this.configService.get<string>('NOTIFICATION_SERVICE_URL');
+    const publicAccessEnabled =
+      this.configService.get<string>('PUBLIC_ACCESS_ENABLED', 'true') === 'true';
 
     return {
+      publicAccess: {
+        enabled: publicAccessEnabled,
+        defaultTenantId: 'tenant-demo-default',
+        policy: publicAccessEnabled
+          ? 'Public demo functionality enabled'
+          : 'Public demo functionality disabled (authenticated tenant required)',
+      },
       modalities: {
         pdf: {
           supported: true,

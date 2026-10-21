@@ -1,4 +1,4 @@
-import {
+import type {
   DocumentEntity,
   ExtractionSchema,
   ExtractionJob,
@@ -22,15 +22,29 @@ export class ApiError extends Error {
   }
 }
 
-class ApiClient {
+export class ApiClient {
   private baseUrl: string;
-  private currentTenantId = 'tenant-demo-default';
-  private demoMode = true;
-  private sqlAuthorized = true;
+  private currentTenantId: string;
+  private demoMode: boolean;
+  private sqlAuthorized: boolean;
+  private publicAccessEnabled: boolean;
 
   constructor() {
-    const raw = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
-    this.baseUrl = raw.replace(/\/+$/, '');
+    let raw = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+    raw = raw.replace(/\/+$/, '');
+    // Ensure base URL includes /api/v1 exactly once
+    if (!raw.endsWith('/api/v1')) {
+      raw = `${raw}/api/v1`;
+    }
+    this.baseUrl = raw;
+
+    this.currentTenantId =
+      process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || 'tenant-demo-default';
+
+    this.publicAccessEnabled =
+      process.env.NEXT_PUBLIC_ACCESS_ENABLED !== 'false';
+    this.demoMode = this.publicAccessEnabled;
+    this.sqlAuthorized = true;
   }
 
   setTenantId(tenantId: string) {
@@ -41,6 +55,10 @@ class ApiClient {
     return this.currentTenantId;
   }
 
+  getDefaultTenantId(): string {
+    return process.env.NEXT_PUBLIC_DEFAULT_TENANT_ID || 'tenant-demo-default';
+  }
+
   setDemoMode(enabled: boolean) {
     this.demoMode = enabled;
   }
@@ -49,12 +67,31 @@ class ApiClient {
     return this.demoMode;
   }
 
+  isPublicAccessEnabled(): boolean {
+    return this.publicAccessEnabled;
+  }
+
   setSqlAuthorized(authorized: boolean) {
     this.sqlAuthorized = authorized;
   }
 
   isSqlAuthorized(): boolean {
     return this.sqlAuthorized;
+  }
+
+  getBaseUrl(): string {
+    return this.baseUrl;
+  }
+
+  normalizeUrl(endpoint: string): string {
+    let cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    // Guard against accidental duplication of /api/v1 prefix
+    if (cleanEndpoint.startsWith('/api/v1/')) {
+      cleanEndpoint = cleanEndpoint.replace('/api/v1', '');
+    } else if (cleanEndpoint === '/api/v1') {
+      cleanEndpoint = '';
+    }
+    return `${this.baseUrl}${cleanEndpoint}`;
   }
 
   private getHeaders(extra: Record<string, string> = {}): Record<string, string> {
@@ -68,8 +105,7 @@ class ApiClient {
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-    const url = `${this.baseUrl}${cleanEndpoint}`;
+    const url = this.normalizeUrl(endpoint);
 
     try {
       const res = await fetch(url, {
@@ -118,7 +154,7 @@ class ApiClient {
   }
 
   getDocumentContentUrl(id: string): string {
-    return `${this.baseUrl}/documents/${id}?tenantId=${this.currentTenantId}`;
+    return this.normalizeUrl(`/documents/${id}/content?tenantId=${this.currentTenantId}`);
   }
 
   async uploadDocument(file: File, retentionDays?: number, documentType?: string): Promise<DocumentEntity> {
@@ -127,7 +163,7 @@ class ApiClient {
     if (retentionDays) formData.append('retentionDays', retentionDays.toString());
     if (documentType) formData.append('documentType', documentType);
 
-    const url = `${this.baseUrl}/documents/upload`;
+    const url = this.normalizeUrl('/documents/upload');
     const res = await fetch(url, {
       method: 'POST',
       headers: this.getHeaders(),
@@ -232,7 +268,7 @@ class ApiClient {
 
   // Export
   getExportUrl(jobId: string, format: 'json' | 'csv'): string {
-    return `${this.baseUrl}/export/jobs/${jobId}?format=${format}`;
+    return this.normalizeUrl(`/export/jobs/${jobId}?format=${format}`);
   }
 
   async getExportData(jobId: string, format: 'json' | 'csv'): Promise<string> {

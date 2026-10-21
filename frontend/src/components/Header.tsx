@@ -3,13 +3,15 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 import { SystemCapabilities } from '../lib/types';
-import { FileText, Shield, Database, Sparkles, RefreshCw } from 'lucide-react';
+import { FileText, Shield, Sparkles, Lock } from 'lucide-react';
 
 interface HeaderProps {
   tenantId: string;
   onTenantChange: (tenant: string) => void;
   isDemoMode: boolean;
   onDemoModeToggle: (enabled: boolean) => void;
+  isPublicAccessEnabled: boolean;
+  backendPublicAccessEnabled?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -17,6 +19,8 @@ export const Header: React.FC<HeaderProps> = ({
   onTenantChange,
   isDemoMode,
   onDemoModeToggle,
+  isPublicAccessEnabled,
+  backendPublicAccessEnabled,
 }) => {
   const [capabilities, setCapabilities] = useState<SystemCapabilities | null>(null);
   const [isTenantEditing, setIsTenantEditing] = useState(false);
@@ -36,6 +40,8 @@ export const Header: React.FC<HeaderProps> = ({
     setIsTenantEditing(false);
   };
 
+  const isDemoPermitted = isPublicAccessEnabled && backendPublicAccessEnabled !== false;
+
   return (
     <header className="app-header">
       <div className="brand-section">
@@ -54,7 +60,7 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       <div className="header-controls">
-        {/* Modality Capabilities Badge */}
+        {/* Modality & Public Access Status Badge */}
         <div
           style={{
             display: 'flex',
@@ -74,7 +80,7 @@ export const Header: React.FC<HeaderProps> = ({
         >
           <span className="status-dot" />
           <span style={{ color: 'var(--text-muted)' }}>
-            PDF: <strong style={{ color: 'var(--accent-emerald)' }}>Active</strong> | Image OCR:{' '}
+            PDF: <strong style={{ color: 'var(--accent-emerald)' }}>Active</strong> | OCR:{' '}
             <strong
               style={{
                 color: capabilities?.modalities.image.supported
@@ -82,27 +88,45 @@ export const Header: React.FC<HeaderProps> = ({
                   : 'var(--accent-amber)',
               }}
             >
-              {capabilities?.modalities.image.supported ? 'Active' : 'Pattern Fallback'}
+              {capabilities?.modalities.image.supported ? 'Active' : 'Pattern'}
             </strong>
           </span>
         </div>
 
-        {/* Demo Mode Toggle */}
-        <button
-          className={`btn btn-sm ${isDemoMode ? 'btn-secondary' : 'btn-secondary'}`}
-          onClick={() => {
-            const next = !isDemoMode;
-            onDemoModeToggle(next);
-            api.setDemoMode(next);
-          }}
-          style={{
-            borderColor: isDemoMode ? 'rgba(99, 102, 241, 0.5)' : 'var(--border-subtle)',
-            background: isDemoMode ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
-          }}
-        >
-          <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-          <span>Demo Mode: {isDemoMode ? 'ON' : 'OFF'}</span>
-        </button>
+        {/* Demo Mode Toggle or Disabled Policy Indicator */}
+        {isDemoPermitted ? (
+          <button
+            className="btn btn-sm btn-secondary"
+            onClick={() => {
+              const next = !isDemoMode;
+              onDemoModeToggle(next);
+              api.setDemoMode(next);
+            }}
+            style={{
+              borderColor: isDemoMode ? 'rgba(99, 102, 241, 0.5)' : 'var(--border-subtle)',
+              background: isDemoMode ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
+            }}
+            title="Toggle client demo exploration mode"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+            <span>Demo Mode: {isDemoMode ? 'ON' : 'OFF'}</span>
+          </button>
+        ) : (
+          <div
+            className="btn btn-sm btn-secondary"
+            style={{
+              opacity: 0.7,
+              cursor: 'not-allowed',
+              borderColor: 'rgba(239, 68, 68, 0.3)',
+              background: 'rgba(239, 68, 68, 0.08)',
+              color: 'var(--text-muted)',
+            }}
+            title="Public demo access is disabled by environment policy. Authenticated tenant context is required."
+          >
+            <Lock className="w-3.5 h-3.5 text-rose-400" />
+            <span>Demo: Disabled (Policy)</span>
+          </div>
+        )}
 
         {/* Tenant Boundary Selector */}
         <div className="tenant-badge">

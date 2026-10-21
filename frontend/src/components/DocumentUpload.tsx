@@ -2,19 +2,27 @@
 
 import React, { useState, useRef } from 'react';
 import { api, ApiError } from '../lib/api';
-import { UploadCloud, FileText, CheckCircle2, AlertTriangle, Sparkles, Clock, Loader2 } from 'lucide-react';
+import { UploadCloud, FileText, CheckCircle2, AlertTriangle, Sparkles, Clock, Loader2, Lock } from 'lucide-react';
 
 interface DocumentUploadProps {
   onDocumentUploaded: () => void;
+  isPublicAccessEnabled?: boolean;
+  backendPublicAccessEnabled?: boolean;
 }
 
-export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onDocumentUploaded }) => {
+export const DocumentUpload: React.FC<DocumentUploadProps> = ({
+  onDocumentUploaded,
+  isPublicAccessEnabled = true,
+  backendPublicAccessEnabled,
+}) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isSeeding, setIsSeeding] = useState(false);
   const [retentionDays, setRetentionDays] = useState<number>(30);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const isDemoPermitted = isPublicAccessEnabled && backendPublicAccessEnabled !== false;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -112,15 +120,27 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onDocumentUpload
         </div>
 
         {/* Demo Data Seeder */}
-        <button
-          className="btn btn-secondary btn-sm"
-          onClick={handleSeedDemoData}
-          disabled={isSeeding || isUploading}
-          title="Seed realistic synthetic Invoice, NDA Contract, and W-9 Tax Form"
-        >
-          {isSeeding ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-amber-400" />}
-          <span>{isSeeding ? 'Seeding Demo Data...' : 'Load Synthetic Demo Docs'}</span>
-        </button>
+        {isDemoPermitted ? (
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={handleSeedDemoData}
+            disabled={isSeeding || isUploading}
+            title="Seed realistic synthetic Invoice, NDA Contract, and W-9 Tax Form"
+          >
+            {isSeeding ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-amber-400" />}
+            <span>{isSeeding ? 'Seeding Demo Data...' : 'Load Synthetic Demo Docs'}</span>
+          </button>
+        ) : (
+          <button
+            className="btn btn-secondary btn-sm"
+            disabled={true}
+            style={{ opacity: 0.6, cursor: 'not-allowed' }}
+            title="Synthetic demo dataset seeding is disabled by environment policy. Authenticated tenant ingestion is required."
+          >
+            <Lock className="w-3.5 h-3.5 text-rose-400" />
+            <span>Demo Seeding Disabled</span>
+          </button>
+        )}
       </div>
 
       {/* Upload Zone */}

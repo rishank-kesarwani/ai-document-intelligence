@@ -117,6 +117,11 @@ export interface AuditRecord {
 }
 
 export interface SystemCapabilities {
+  publicAccess?: {
+    enabled: boolean;
+    defaultTenantId?: string;
+    policy?: string;
+  };
   modalities: {
     pdf: { supported: boolean; engine: string; evidenceCoordinates: boolean };
     image: { supported: boolean; engine: string; evidenceCoordinates: boolean };

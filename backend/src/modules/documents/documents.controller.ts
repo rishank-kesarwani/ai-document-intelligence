@@ -18,6 +18,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { Response, Request } from 'express';
 import { DocumentsService } from './documents.service';
 import { TenantGuard } from '../../common/guards/tenant.guard';
+import { PublicAccessGuard } from '../../common/guards/public-access.guard';
 import { UploadDocumentDto, DeleteDocumentQueryDto } from './dto/upload-document.dto';
 import { TenantContext } from '../../common/types';
 
@@ -49,6 +50,7 @@ export class DocumentsController {
   }
 
   @Post('demo/seed')
+  @UseGuards(PublicAccessGuard)
   @HttpCode(HttpStatus.OK)
   async seedDemoDocuments(@Req() req: Request) {
     const tenantContext: TenantContext = (req as any).tenantContext;
