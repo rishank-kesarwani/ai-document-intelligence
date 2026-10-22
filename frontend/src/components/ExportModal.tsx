@@ -66,9 +66,9 @@ export const ExportModal: React.FC<ExportModalProps> = ({ job, onClose }) => {
         </div>
 
         <div style={{ padding: '1.25rem', overflowY: 'auto', flex: 1 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
             {/* Format toggle */}
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               <button
                 className={`btn btn-sm ${format === 'json' ? 'btn-primary' : 'btn-secondary'}`}
                 onClick={() => setFormat('json')}

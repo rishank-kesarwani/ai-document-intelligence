@@ -93,7 +93,7 @@ export const ExtractionWorkspace: React.FC<ExtractionWorkspaceProps> = ({
         </div>
 
         {/* Action Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <div className="workspace-action-controls">
           {job.canRetry && (job.status === 'failed' || job.status === 'needs_review') && (
             <button className="btn btn-secondary btn-sm" onClick={onRetry} title="Idempotent safe retry">
               <RotateCcw className="w-3.5 h-3.5" />
@@ -143,7 +143,7 @@ export const ExtractionWorkspace: React.FC<ExtractionWorkspaceProps> = ({
       )}
 
       {/* Interactive Split Workspace */}
-      <div className="workspace-grid" style={{ padding: '1.25rem 1.5rem', height: '620px' }}>
+      <div className="workspace-grid">
         {/* Left Pane: Document Text & Visual Evidence Viewer */}
         <div className="pane-container" style={{ border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', background: 'rgba(7, 9, 14, 0.6)' }}>
           <div className="pane-header">
@@ -282,7 +282,7 @@ export const ExtractionWorkspace: React.FC<ExtractionWorkspaceProps> = ({
             </span>
           </div>
 
-          <div className="pane-body" style={{ padding: 0 }}>
+          <div className="pane-body table-pane-body" style={{ padding: 0 }}>
             <table className="data-table">
               <thead>
                 <tr>

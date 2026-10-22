@@ -52,7 +52,7 @@ export const Header: React.FC<HeaderProps> = ({
             <h1 className="brand-title">Document Intelligence</h1>
             <span className="brand-tag">v1.0 MVP</span>
           </div>
-          <p style={{ fontSize: '0.74rem', color: 'var(--text-dim)' }}>
+          <p className="brand-subtitle">
             Secure Ingestion • Evidence Linking • Business Rule Review • Safe SQL
           </p>
         </div>
@@ -61,6 +61,7 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="header-controls">
         {/* Modality & Public Access Status Badge */}
         <div
+          className="header-status-badge"
           style={{
             display: 'flex',
             alignItems: 'center',

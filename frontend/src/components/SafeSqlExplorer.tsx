@@ -93,19 +93,7 @@ export const SafeSqlExplorer: React.FC = () => {
       </div>
 
       {/* Safety Safeguards Banner */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '0.75rem',
-          padding: '0.85rem',
-          background: 'rgba(255, 255, 255, 0.02)',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: 'var(--radius-md)',
-          marginBottom: '1.25rem',
-          fontSize: '0.76rem',
-        }}
-      >
+      <div className="sql-safeguards-grid">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#34d399' }}>
           <ShieldCheck className="w-4 h-4 flex-shrink-0" />
           <span>Read-Only SELECT (DDL/DML blocked)</span>
@@ -127,7 +115,7 @@ export const SafeSqlExplorer: React.FC = () => {
       {/* Query Input & Sample Chips */}
       <div className="form-group">
         <label className="form-label">Ask a question about your documents and extraction data:</label>
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
+        <div className="sql-query-bar">
           <input
             type="text"
             className="form-input"

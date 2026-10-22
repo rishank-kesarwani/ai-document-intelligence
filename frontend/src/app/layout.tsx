@@ -1,5 +1,12 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import '../styles/globals.css';
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: '#07090e',
+};
 
 export const metadata: Metadata = {
   title: 'AI Multimodal Document Intelligence | Secure Ingestion & Evidence-Linked Extraction',

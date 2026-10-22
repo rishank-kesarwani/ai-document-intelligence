@@ -107,8 +107,8 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
   };
 
   return (
-    <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '1.75rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+    <div className="glass-panel upload-panel" style={{ padding: '1.5rem', marginBottom: '1.75rem' }}>
+      <div className="upload-header">
         <div>
           <h2 style={{ fontSize: '1.1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <UploadCloud className="w-5 h-5 text-indigo-400" />
@@ -202,7 +202,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
       </div>
 
       {/* Retention Controls & Limits Note */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+      <div className="upload-footer-controls">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
           <Clock className="w-3.5 h-3.5 text-indigo-400" />
           <span>Retention Policy:</span>

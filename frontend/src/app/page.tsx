@@ -176,7 +176,7 @@ export default function Home() {
         backendPublicAccessEnabled={backendPublicAccessEnabled}
       />
 
-      <main style={{ maxWidth: '1440px', width: '100%', margin: '0 auto', padding: '1.5rem', flex: 1 }}>
+      <main className="main-container">
         {/* Public Access Policy Banner when Demo Access is Disabled */}
         {!isDemoPermitted && (
           <div
@@ -281,25 +281,15 @@ export default function Home() {
           <div>
             {/* Job selector if multiple jobs exist */}
             {jobs.length > 1 && (
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.6rem',
-                  marginBottom: '1rem',
-                  fontSize: '0.82rem',
-                  color: 'var(--text-muted)',
-                }}
-              >
-                <span>Select Job:</span>
+              <div className="job-selector-bar">
+                <span style={{ flexShrink: 0, fontWeight: 500 }}>Select Job:</span>
                 <select
-                  className="form-select"
+                  className="form-select job-selector-select"
                   value={activeJob?.id}
                   onChange={(e) => {
                     const found = jobs.find((j) => j.id === e.target.value);
                     if (found) setActiveJob(found);
                   }}
-                  style={{ width: 'auto', minWidth: '220px', padding: '4px 8px', fontSize: '0.8rem' }}
                 >
                   {jobs.map((j) => (
                     <option key={j.id} value={j.id}>
