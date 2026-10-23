@@ -246,3 +246,37 @@ npm install
 npm run dev         # Runs on http://localhost:3000
 ```
 
+---
+
+## 11. Image Optimization Architecture & Vercel Quota Management
+
+### Context & Quota Protection
+Vercel includes an allowance of 5,000 image transformations per month for team accounts. Standard unconfigured Next.js applications generate up to 16 transformation variants per image (8 `deviceSizes` + 8 `imageSizes`) with a default cache lifetime of only 60 seconds (`minimumCacheTTL: 60`). When the 5,000 transformation ceiling is reached, Vercel's `/_next/image` endpoint fails with HTTP 402/500 errors, resulting in broken images across the UI.
+
+This platform enforces an enterprise image optimization architecture that preserves zero Cumulative Layout Shift (CLS), fast LCP, full mobile responsiveness, and zero broken images:
+
+### Key Optimizations Implemented
+
+| Optimization Area | Default Next.js Behavior | Platform Configuration | Transformations Avoided |
+|---|---|---|---|
+| **Responsive Device Sizes** | 8 breakpoints (`[640, 750, 828, 1080, 1200, 1920, 2048, 3840]`) | 3 bounded breakpoints (`[640, 1080, 1920]`) | Cuts device transformation variants by > 62% |
+| **UI Icon / Thumbnail Sizes** | 8 sizes (`[16, 32, 48, 64, 96, 128, 256, 384]`) | 4 essential tiers (`[32, 64, 128, 256]`) | Cuts icon transformation variants by 50% |
+| **Transformation Cache TTL** | 60 seconds | 30 days (`minimumCacheTTL: 2592000`) | Eliminates repeated re-transformations of cached assets |
+| **Output Formats** | Generates multiple formats | Fixed `['image/webp']` | Prevents format-multiplying transformations |
+| **SVGs & Vector Assets** | Route through `/_next/image` | Rendered inline via `<Logo />` or served statically via `/icon.svg` with `unoptimized={true}` | 0 Vercel transformations (100% saved) |
+| **Uploaded Document Streams** | Full resolution sent to optimizer | Served directly with `unoptimized={true}` via `<SafeImage>` | 0 transformations on user-uploaded documents |
+| **Quota Fallback Recovery** | Broken image on HTTP 402/500 | Automatic runtime fallback to unoptimized source delivery | 0 broken images when monthly quota is exhausted |
+
+### SafeImage Component (`frontend/src/components/SafeImage.tsx`)
+All raster images and dynamic document previews use the enterprise `<SafeImage>` wrapper:
+1. **Selective Unoptimized Rule**: Automatically applies `unoptimized={true}` for SVGs, data URIs, blob streams, and backend document endpoints (`/documents/:id/content`).
+2. **Quota Resilience**: Intercepts Vercel transformation failures (`onError`) and seamlessly re-renders the source image directly with `unoptimized={true}` without user intervention.
+3. **Layout Stability & Accessibility**: Retains Next.js intrinsic aspect ratio sizing (`width`, `height`, `fill`, `sizes`) and includes accessible fallback states if an asset is unavailable.
+
+### Developer Guide: Adding New Assets
+1. **Vector Graphics & Icons**: Use inline SVG components (like `<Logo />`) or Lucide icons (`lucide-react`). If storing static SVGs in `public/`, load with `<SafeImage unoptimized ... />`.
+2. **Document & Dynamic Content Previews**: Always load through `<SafeImage unoptimized src={url} alt="..." />` to prevent consuming transformation quota on user uploads.
+3. **Hero Photography / Large Raster Images**: If photography is introduced where responsive downsizing materially improves mobile payloads, use `<SafeImage>` without `unoptimized`, always specifying explicit `sizes="(max-width: 768px) 100vw, 1200px"`.
+4. **Never globally disable optimization**: Global disabling hurts mobile performance and bandwidth on large raster photographs. Selective governance ensures large photos remain optimized while SVGs, icons, and document streams bypass Vercel's quota.
+
+

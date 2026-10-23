@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react';
 import { ExtractionJob, ExtractedField, DocumentEntity } from '../lib/types';
+import { api } from '../lib/api';
+import { SafeImage } from './SafeImage';
 import {
   CheckCircle2,
   AlertTriangle,
@@ -218,6 +220,18 @@ export const ExtractionWorkspace: React.FC<ExtractionWorkspaceProps> = ({
                             overflow: 'hidden',
                           }}
                         >
+                          {/* Background document preview for image modality (strictly unoptimized to bypass Vercel) */}
+                          {document && document.modality === 'image' && (
+                            <SafeImage
+                              src={api.getDocumentContentUrl(document.id)}
+                              alt={document.originalFilename}
+                              fill
+                              unoptimized
+                              style={{ objectFit: 'contain', opacity: 0.25 }}
+                              fallback={null}
+                            />
+                          )}
+
                           <div
                             style={{
                               position: 'absolute',
@@ -225,9 +239,10 @@ export const ExtractionWorkspace: React.FC<ExtractionWorkspaceProps> = ({
                               top: '8px',
                               fontSize: '0.65rem',
                               color: 'var(--text-dim)',
+                              zIndex: 2,
                             }}
                           >
-                            Document Page 1 Canvas
+                            Document Page {activeField.evidence.pageNumber || 1} Canvas
                           </div>
 
                           {/* Highlight region */}

@@ -9,7 +9,7 @@
     "start": "next start -p 3000",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
-    "test": "node --test --experimental-strip-types test/api-client.test.mjs"
+    "test": "node --test --experimental-strip-types test/*.test.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.447.0",
